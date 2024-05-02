@@ -1,0 +1,204 @@
+/* Employe Style */
+
+.table-container {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .table {
+    border-collapse: collapse;
+    width: 95%;
+    margin-bottom: 20px;
+    
+  }
+  
+  .table th, .table td {
+    border: 1px solid #ddd;
+    padding: 4px;
+    padding-left: 10px;
+    text-align: left;
+  }
+  
+  .table th {
+    background-color: #f0f0f0;
+  }
+  
+  .table tbody tr:nth-child(even) {
+    background-color: #f9f9f9;
+  }
+
+  .table-container .table td:nth-child(5) {
+    width: 17%; 
+  }
+  .table-container .table td:nth-child(1) {
+    width: 10%; 
+  }
+  .table-container .table td:nth-child(6) {
+    width: 13%; /* Adjust the width as needed */
+  }
+  
+  /* Button Styles */
+  .button {
+    padding: 4px 16px;
+    font-size: 14px;
+    cursor: pointer;
+    margin-right: 5px;
+  }
+  
+  .button.edit {
+   color: #007bff;
+    
+    border: none;
+  }
+  
+  .button.edit:hover {
+    color: #0056b3;
+  }
+  
+  .button.delete {
+   color: #dc3545;
+    /* color: #fff; */
+    border: none;
+  }
+  
+  .button.delete:hover {
+    color: #c82333;
+  }
+
+  .table td input, .table td select{
+    padding: 5px;
+    width: 90%;
+  }
+
+  .table-container >div:first-child{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 95%;
+  }
+
+
+  /* Pop Style */
+
+  .popup-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5); /* semi-transparent background */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999; /* Ensure the popup appears above all other content */
+  }
+  
+  .popup {
+    background-color: #fff;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    width: 300px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  .popup h2 {
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+  
+  .popup input[type="text"], .popup input[type="number"], .popup input[type="phone"], .popup select {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+    /* margin-bottom: 20px; */
+  }
+
+  .filterBox{
+    /* border: 2px solid red; */
+    width: 70%;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+
+  .filterBox input[type="text"], .filterBox input[type="number"], .filterBox input[type="phone"], .filterBox select {
+   
+    padding: 8px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+    /* margin-bottom: 20px; */
+  }
+
+  .suggestions {
+    border: 1px solid #ccc;
+    max-height: 150px;
+    width: 100%;
+    
+    overflow-y: scroll;
+    margin-bottom: 10px;
+}
+
+.suggestion {
+    padding: 5px;
+    cursor: pointer;
+}
+
+.suggestion:hover {
+    background-color: #f0f0f0;
+}
+
+  
+  .popup button {
+    padding: 8px 16px;
+    margin-right: 10px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  
+  .popup button.primary {
+    background-color: #007bff;
+    color: #fff;
+  }
+  
+  .popup .danger {
+    background-color: #dc3545;
+    color: #fff;
+    padding: 5px 5px;
+    /* margin-right: 10px; */
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  /* .popup button.close {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: none;
+    border: none;
+    cursor: pointer;
+  } */
+
+  .popup >div:first-child{
+    display: flex;
+    width: 100%;
+    /* flex-direction: column; */
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+  }
