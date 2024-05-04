@@ -205,22 +205,25 @@ const DataProvider = ({ children }) => {
   const [attendanceData, setAttendanceData] = useState([]);
   const [attendanceDetail, setAttendanceDetail] = useState([])
 
-const [specificAttendence, setSpecificAttendence] = useState([]);
+  // const [specificAttendence, setSpecificAttendence] = useState([]);
 
-const [specificAttendenceDetail, setSpecificAttendanceDetail] = useState([])
+  const [specificAttendenceDetail, setSpecificAttendanceDetail] = useState([])
 
 
   useEffect(() => {
     fetchAttendanceData();
   }, []);
 
-  useEffect(()=>{
+  useEffect(() => {
     fetchAttendanceDetail()
-  },[attendanceData])
+  }, [attendanceData])
 
-  useEffect(()=>{
-    fetchSpecificAttendanceDetail()
-  },[specificAttendence])
+  // useEffect(() => {
+  //   if(specificAttendence.employeeId){
+
+  //     fetchSpecificAttendanceDetail()
+  //   }
+  // }, [specificAttendence])
 
 
   const fetchAttendanceData = async () => {
@@ -248,7 +251,7 @@ const [specificAttendenceDetail, setSpecificAttendanceDetail] = useState([])
               throw new Error('Failed to fetch employee details');
             }
             const employeeData = await employeeResponse.json();
-  
+
             // Fetch employee details for madeBy
             let madeByData = null; // Default value for madeByData
             if (item.madeBy !== 'admin') {
@@ -258,7 +261,7 @@ const [specificAttendenceDetail, setSpecificAttendanceDetail] = useState([])
               }
               madeByData = await madeByResponse.json(); // Assign value only if not 'admin'
             }
-  
+
             return { ...item, employeeDetails: employeeData, madeByDetails: madeByData };
           } catch (error) {
             console.error('Error fetching employee data:', error);
@@ -266,11 +269,11 @@ const [specificAttendenceDetail, setSpecificAttendanceDetail] = useState([])
           }
         })
       );
-  
+
       // console.log(updatedAttendance)
-  
+
       setAttendanceDetail(updatedAttendance);
-      return(updatedAttendance)
+      return (updatedAttendance)
       // Update state with the updated attendance data
     } catch (error) {
       console.error('Error fetching attendance details:', error);
@@ -285,31 +288,62 @@ const [specificAttendenceDetail, setSpecificAttendanceDetail] = useState([])
         throw new Error('Failed to fetch attendance data');
       }
       const data = await response.json();
-      setSpecificAttendence(data);
+      // setSpecificAttendence(data);
+
+      return data
       // console.log(data)
+      // fetchSpecificAttendanceDetail();
     } catch (error) {
       console.error(error);
     }
   };
 
 
-  const fetchSpecificAttendanceDetail = async () => {
-    console.log(specificAttendence)
-      
+  const fetchSpecificAttendanceDetail = async (id) => {
+    try {
+      let specificAttendence = await fetchSpecificAttendanceData(id)
+      const employeeResponse = await fetch(`${IP_Address}/employee/employees/${specificAttendence.employeeId}`);
+
+      if (!employeeResponse.ok) {
+        throw new Error('failed to Fetch employee Detail')
+      }
+
+      const employeeData = await employeeResponse.json()
+      let madeByData = null; // Default value for madeByData
+      if (specificAttendence.madeBy !== 'admin') {
+        const madeByResponse = await fetch(`${IP_Address}/employee/employees/${specificAttendence.madeBy}`);
+        if (!madeByResponse.ok) {
+          throw new Error('Failed to fetch employee details for madeBy');
+        }
+        madeByData = await madeByResponse.json(); // Assign value only if not 'admin'
+      }
+
+      setSpecificAttendanceDetail({...specificAttendence, employeeDetails: employeeData, madeByDetails: madeByData })
+
+      return { ...specificAttendence, employeeDetails: employeeData, madeByDetails: madeByData };
+    } catch (error) {
+      console.error('Error fetching employee data:', error);
+      return null; // Keep the original item if fetching fails
+    }
   };
 
 
-  const addAttendance = async (formData) => {
+  const addAttendance = async (data) => {
     try {
+
+      console.log(data)
       const response = await fetch(`${IP_Address}/attendance/checkinout`, {
         method: 'POST',
-        body: formData,
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
       });
-  
+
       if (!response.ok) {
         throw new Error('Failed to save Attendance data');
       }
-  
+
       console.log('Attendance data saved successfully');
       // Optionally, you can fetch services again after posting client data
       // fetchAttendanceData();
@@ -345,8 +379,9 @@ const [specificAttendenceDetail, setSpecificAttendanceDetail] = useState([])
       addAttendance,
       fetchAttendanceData,
       fetchSpecificAttendanceData,
-      specificAttendence,
-      specificAttendenceDetail
+      // specificAttendence,
+      specificAttendenceDetail,
+      fetchSpecificAttendanceDetail
 
     }}>
       {children}

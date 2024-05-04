@@ -9,9 +9,13 @@ import { DataContext } from '../Data/DataContext';
 import CustomDatePicker from '../components/DatePicker';
 import TimePicker from '../components/TimePicker';
 
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
+import * as XLSX from 'xlsx'
+
 function Page() {
 
-    const { attendanceData, attendanceDetail, allClient, allEmployee, addAttendance, fetchAttendanceData, fetchSpecificAttendanceData, specificAttendence, specificAttendenceDetail
+    const { attendanceData, attendanceDetail, allClient, allEmployee, addAttendance, fetchAttendanceData, fetchSpecificAttendanceData, specificAttendenceDetail, fetchSpecificAttendanceDetail, IP_Address
     } = useContext(DataContext)
 
 
@@ -19,9 +23,13 @@ function Page() {
     const [showAddAttendancePopup, setShowAddAttendancePopup] = useState(false);
 
     const [selectedInDate, setSelectedInDate] = useState(new Date());
-    const [selectedOutDate, setSelectedOutDate] = useState(new Date());
-    const [selectedInTime, setSelectedInTime] = useState('');
-    const [selectedOutTime, setSelectedOutTime] = useState('');
+    // const [selectedOutDate, setSelectedOutDate] = useState(new Date());
+    // const [selectedInTime, setSelectedInTime] = useState('');
+    // const [selectedOutTime, setSelectedOutTime] = useState('');
+    const [attendanceStatus, setAttendanceStatus] = useState('')
+    const [overTime, setOverTime] = useState('')
+
+
 
 
     const [employeeName, setEmployeeName] = useState('');
@@ -34,8 +42,19 @@ function Page() {
     const [selectedClient, setSelectedClient] = useState('')
     const [suggestions, setSuggestions] = useState([]);
 
+    const attendanceOptions = [
+        'P/2',
+        'P',
+        'P+P/2',
+        'PP',
+        'PP+P/2',
+        'PPP',
 
+    ];
 
+    const handleSelectedStatus = (event) => {
+        setAttendanceStatus(event.target.value)
+    }
 
     const handleEmployeeNameChange = (e) => {
         const name = e.target.value;
@@ -46,6 +65,40 @@ function Page() {
         const filtered = filterAllEmployee.filter(employee => employee.employeeName.toLowerCase().includes(text.toLowerCase()));
         setSuggestions(filtered);
     };
+
+
+    const handleDownloadExcel = () => {
+        const wb = XLSX.utils.book_new();
+        const wsData = []; // Array to store table data
+    
+        // Extract header row
+        const headerRow = [];
+        document.querySelectorAll('.table thead th').forEach(cell => {
+            headerRow.push(cell.textContent.trim());
+        });
+        wsData.push(headerRow);
+    
+        // Iterate over table rows
+        const rows = document.querySelectorAll('.table tbody tr');
+        rows.forEach(row => {
+            const rowData = []; // Array to store data for each row
+            const cells = row.querySelectorAll('td');
+            cells.forEach(cell => {
+                // Extract text content of each cell
+                rowData.push(cell.textContent.trim());
+            });
+            // Add row data to wsData array
+            wsData.push(rowData);
+        });
+    
+        // Create worksheet from wsData array
+        const ws = XLSX.utils.aoa_to_sheet(wsData);
+        // Append worksheet to workbook
+        XLSX.utils.book_append_sheet(wb, ws, "AttendanceData");
+        // Trigger download of workbook as Excel file
+        XLSX.writeFile(wb, "attendance_data.xlsx");
+    };
+
 
     const handleSuggestionClick = (selectedEmployee) => {
         setEmployeeName(selectedEmployee.employeeName);
@@ -84,46 +137,34 @@ function Page() {
     const handleInDateChange = (date) => {
         setSelectedInDate(date);
     };
-    const handleOutDateChange = (date) => {
-        setSelectedOutDate(date);
-    };
 
-    const handleInTimeChange = (time) => {
-        setSelectedInTime(time);
-        //    console.log(selectedTime)
-    };
-    const handleOutTimeChange = (time) => {
-        setSelectedOutTime(time);
-        //    console.log(selectedTime)
-    };
-    const months = [
-        { name: 'January', days: 31 },
-        { name: 'February', days: 29 },
-        { name: 'March', days: 31 },
-        { name: 'April', days: 30 },
-        { name: 'May', days: 31 },
-        { name: 'June', days: 30 },
-        { name: 'July', days: 31 },
-        { name: 'August', days: 31 },
-        { name: 'September', days: 30 },
-        { name: 'October', days: 31 },
-        { name: 'November', days: 30 },
-        { name: 'December', days: 31 }
-    ];
 
-    const handleAttendanceDetail = (id) => {
+
+    const handleAttendanceDetail = async (id) => {
         if (id) {
-            setshowAttendanceDetailPopup(true);
-            // console.log(id);
-
-            fetchSpecificAttendanceData(id)
-
-            
+            try {
+                await fetchSpecificAttendanceDetail(id); // Wait for data to be fetched
+                setshowAttendanceDetailPopup(true); // Update state to show 
+                // console.log(specificAttendenceDetail.employeeDetails.employeeName);
+            } catch (error) {
+                console.error('Error fetching specific attendance data:', error);
+                // Handle error appropriately, e.g., show an error message
+            }
         }
     };
 
+
+
     const handleAddAttendance = () => {
-        setShowAddAttendancePopup(true);
+        if (selectedClient !== '') {
+
+            setShowAddAttendancePopup(true);
+        }
+        else {
+
+            alert("Please Select Organization")
+        }
+
     };
 
     const handleCloseAddClientPopup = () => {
@@ -169,30 +210,31 @@ function Page() {
 
     const handleAttendanceSubmission = () => {
         const inDate = formatDate(selectedInDate);
-        const inTime = formatTime(selectedInTime);
-        const outDate = formatDate(selectedOutDate);
-        const outTime = formatTime(selectedOutTime);
 
+        //  console.log(employeeId, inDate, attendanceStatus, overTime )
+        const madeBy = 'admin';
 
-        const formData = new FormData();
-        formData.append('employeeId', employeeId); // Assuming employeeId is available
-        formData.append('checkInTime', `${inDate} ${inTime}`);
-        formData.append('checkOutTime', `${outDate} ${outTime}`);
-        formData.append('madeBy', 'admin')
+        const data = {
+            employeeId,
+            checkInTime: inDate,
+            attendanceStatus,
+            overTime,
+            madeBy
+        };
 
         // console.log(formData)
-        addAttendance(formData)
+        addAttendance(data)
 
         // console.log(selectedOutDate, selectedOutTime)
         setEmployeeName('')
         setEmployeId('')
         setSelectedInDate(new Date())
-        setSelectedInTime('')
-        setSelectedOutDate(new Date())
-        setSelectedOutTime('')
+
 
         setEmployeePhone('')
         setEmployeeDesignation('')
+        setAttendanceStatus('')
+        setOverTime('')
         handleCloseAddClientPopup()
         fetchAttendanceData()
     }
@@ -203,19 +245,27 @@ function Page() {
         setSelectedClient(client);
     };
 
-  
+    const [selectedMonth, setSelectedMonth] = useState(new Date());
+    const handleMonthChange = (date) => {
+        setSelectedMonth(date);
+    };
+    const getDaysInMonth = () => {
+        const year = selectedMonth.getFullYear();
+        const month = selectedMonth.getMonth() + 1; // JavaScript months are 0-based
+        return new Date(year, month, 0).getDate();
+    };
+
+    const selectedMonthNumber = selectedMonth.getMonth() + 1;
+    const dayNumbers = Array.from({ length: getDaysInMonth() }, (_, i) => i + 1);
+
+    const selectedYear = selectedMonth.getFullYear();
 
 
+    useEffect(() => {
 
-    const [selectedMonth, setSelectedMonth] = useState(months[0].name);
+        console.log(specificAttendenceDetail)
+    }, [specificAttendenceDetail])
 
-   
-    const selectedMonthObj = months.find(month => month.name === selectedMonth);
-
-    
-    const dayNumbers = Array.from({ length: selectedMonthObj.days }, (_, i) => i + 1);
-
-    
     const headerRow = (
         <tr>
             <th>S.NO</th>
@@ -224,18 +274,33 @@ function Page() {
             {dayNumbers.map(day => <th key={day}>{day}</th>)}
         </tr>
     );
-    const selectedMonthNumber = months.findIndex(month => month.name === selectedMonth) + 1;
 
+
+
+
+
+
+
+
+
+    const filterOrgaziation = allClient.filter(client => client.hospitalName === selectedClient);
+
+
+    useEffect(() => {
+        // console.log(filterOrgaziation)
+    }, [allClient, selectedClient])
 
 
     // Generate a row for the selected month
     const row = filterAllEmployee.map((data, index) => {
-        // Check if there's any matching attendance for the current employee
+
         const matchingAttendance = attendanceDetail.filter(attendance => attendance.employeeId === data._id);
 
-        // console.log(attendanceDetail)
-    
-        // Initialize an array to hold attendance status for each day
+
+        // console.log(data)
+        // console.log(filterOrgaziation)
+
+
         const attendanceStatusArray = dayNumbers.map(day => {
             return ''; // Initialize all days with empty status
         });
@@ -243,24 +308,32 @@ function Page() {
         const attendanceIdArray = dayNumbers.map(day => {
             return ''; // Initialize all days with empty IDs
         });
-    
-    
+
+
+
+
         matchingAttendance.forEach(attendance => {
-            // Extract month and day from checkInTime
-            // console.log(attendance._id)
+            // Extract year, month, and day from checkInTime
+            // console.log(attendance)
             const checkInDate = attendance.checkInTime;
+
+            // console.log(checkInDate)
+            const checkInYear = parseInt(checkInDate.split('.')[2], 10);
             const checkInMonth = parseInt(checkInDate.split('.')[1], 10);
             const checkInDay = parseInt(checkInDate.split('.')[0], 10);
-    
-            // Check if the attendance is for the selected month
-            if (checkInMonth === selectedMonthNumber && dayNumbers.includes(checkInDay)) {
+
+
+
+
+
+            if (checkInYear === selectedYear && checkInMonth === selectedMonthNumber && dayNumbers.includes(checkInDay)) {
                 // Update attendance status for the corresponding day
                 const dayIndex = checkInDay - 1; // Adjust day index since arrays are zero-indexed
-                attendanceStatusArray[dayIndex] = 'P';
+                attendanceStatusArray[dayIndex] = attendance.attendanceStatus;
                 attendanceIdArray[dayIndex] = attendance._id;
             }
         });
-    
+
         // Generate the row with attendance status for each day
         return (
             <tr key={index}>
@@ -273,17 +346,18 @@ function Page() {
             </tr>
         );
     });
-    
+
     return (
         <div style={{ minHeight: '100vh' }}>
             <div className='attendanceTop'>
                 <div>
                     <label htmlFor="months">Select a month: </label>
-                    <select id="months" onChange={(e) => setSelectedMonth(e.target.value)} value={selectedMonth}>
-                        {months.map(month => (
-                            <option key={month.name} value={month.name}>{month.name}</option>
-                        ))}
-                    </select>
+                    <DatePicker
+                        selected={selectedMonth}
+                        onChange={handleMonthChange}
+                        dateFormat="MMMM yyyy"
+                        showMonthYearPicker
+                    />
                 </div>
 
                 <div>
@@ -308,6 +382,7 @@ function Page() {
                     </tbody>
                 </table>
             </div>
+            <button onClick={handleDownloadExcel}>Download Excel</button>
 
             {showAttendanceDetailPopup && (
                 <div className="popup-container">
@@ -320,47 +395,57 @@ function Page() {
                         <div className='attDetailBox'>
                             <div>
                                 <span>Employee Id:</span>
-                                <span>#852254254542</span>
+                                <span>#{specificAttendenceDetail.employeeId}</span>
 
                             </div>
-                            <div>
+                            {/* <div>
                                 <span>Date :</span>
                                 <span>14.12.22</span>
 
+                            </div> */}
+                            <div>
+                                <span>Made By</span>
                             </div>
 
                             <div>
-                                <div>
-                                    <Image src={dummyImage} width={100} height={100} alt='inImage'/>
-                                    <span>InTime</span>
-                                    <span>8:12 AM</span>
-                                </div>
-                                <div>
-                                    <Image src={dummyImage} width={100} height={100} alt='outImage'/>
-                                    <span>outTime</span>
-                                    <span>8:12 AM</span>
-                                </div>
+                                {specificAttendenceDetail.madeByDetails ? (
+                                    <div>
+                                        <span>Name</span>
+                                        <span>{specificAttendenceDetail.madeByDetails.employeeName}</span>
+                                    </div>
+                                ):(
+                                    <p>Made By Admin</p>
+                                )
+                            }
+
+                                {specificAttendenceDetail.madeByDetails && (
+                                    <div>
+                                        <span></span>
+                                        <span>Phone</span>
+                                        <span>{specificAttendenceDetail.madeByDetails.employeePhone}</span>
+                                    </div>
+                                )}
                             </div>
 
                             <div>
                                 <div>
                                     <span>Name</span>
-                                    <span>Sunny Kumar</span>
+                                    <span>{specificAttendenceDetail.employeeDetails.employeeName}</span>
                                 </div>
 
                                 <div>
                                     <span>Phone Number</span>
-                                    <span>7896455245</span>
+                                    <span>{specificAttendenceDetail.employeeDetails.employeePhone}</span>
                                 </div>
 
                                 <div>
                                     <span>Organisation</span>
-                                    <span>Sunrise</span>
+                                    <span>{specificAttendenceDetail.employeeDetails.hospitalName}</span>
                                 </div>
 
                                 <div>
                                     <span>Designation</span>
-                                    <span>GDA</span>
+                                    <span>{specificAttendenceDetail.employeeDetails.service}</span>
                                 </div>
                             </div>
 
@@ -416,17 +501,28 @@ function Page() {
                                 />
                             </div>
                             <div>
-                                <span>In Date & Time:</span>
+                                <span>In Date:</span>
                                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                                     <CustomDatePicker selectedDate={selectedInDate} onChange={handleInDateChange} />
-                                    <TimePicker selectedTime={selectedInTime} className='timePicker' onChange={handleInTimeChange} />
+
                                 </div>
                             </div>
                             <div>
-                                <span>Out Date & Time:</span>
+                                {/* <span>Attendance Status:</span> */}
                                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                    <CustomDatePicker selectedDate={selectedOutDate} onChange={handleOutDateChange} />
-                                    <TimePicker selectedTime={selectedOutTime} className='timePicker' onChange={handleOutTimeChange} />
+                                    <select value={attendanceStatus} onChange={handleSelectedStatus} style={{ marginRight: '10px' }}>
+                                        <option value="">Select an option</option>
+                                        {attendanceOptions.map(option => (
+                                            <option key={option} value={option}>{option}</option>
+                                        ))}
+                                    </select>
+
+                                    <input
+                                        type="text"
+                                        placeholder='Overtime'
+                                        value={overTime}
+                                        onChange={(e) => setOverTime(e.target.value)}
+                                    />
                                 </div>
                             </div>
                             {/* Add other fields as required */}

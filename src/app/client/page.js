@@ -152,7 +152,7 @@ function Page() {
                 </thead>
                 <tbody>
                     {allClient.map((client, index) => (
-                        <tr key={client.id}>
+                        <tr key={index}>
                             <td>{index + 1}</td>
                             <td>{client.hospitalName}</td>
                             <td>
