@@ -17,7 +17,8 @@ function Page() {
         service: '',
         morningShift: '', // New state for morning shift
         eveningShift: '', // New state for evening shift
-        nightShift: ''
+        nightShift: '',
+        overtimePermission: ''
     });
     const [suggestions, setSuggestions] = useState([]);
 
@@ -69,15 +70,15 @@ function Page() {
     };
 
     const handleSaveClient = () => {
-        const timeRegex = /^(0?[1-9]|1[0-2]):[0-5][0-9] (AM|PM) - (0?[1-9]|1[0-2]):[0-5][0-9] (AM|PM)$/;
+        // const timeRegex = /^(0?[1-9]|1[0-2]):[0-5][0-9] (AM|PM) - (0?[1-9]|1[0-2]):[0-5][0-9] (AM|PM)$/;
     
         // Check if all shift times match the required format
-        if ((newClientData.morningShift && !timeRegex.test(newClientData.morningShift)) || 
-            (newClientData.eveningShift && !timeRegex.test(newClientData.eveningShift)) || 
-            (newClientData.nightShift && !timeRegex.test(newClientData.nightShift))) {
-            alert('Please enter time in the format: HH:MM AM/PM - HH:MM AM/PM');
-            return; // Prevent further execution
-        }
+        // if ((newClientData.morningShift && !timeRegex.test(newClientData.morningShift)) || 
+        //     (newClientData.eveningShift && !timeRegex.test(newClientData.eveningShift)) || 
+        //     (newClientData.nightShift && !timeRegex.test(newClientData.nightShift))) {
+        //     alert('Please enter time in the format: HH:MM AM/PM - HH:MM AM/PM');
+        //     return; // Prevent further execution
+        // }
     
         // Validate hospital name format
         if (newClientData.hospitalName.charAt(0) !== newClientData.hospitalName.charAt(0).toUpperCase()) {
@@ -94,6 +95,11 @@ function Page() {
             workingHour: ''
         });
         handleCloseAddClientPopup();
+    };
+
+
+    const handleOvertimePermissionChange = (value) => {
+        setNewClientData({ ...newClientData, overtimePermission: value });
     };
 
     const handleDeleteClient = (clientId) => {
@@ -147,6 +153,7 @@ function Page() {
                         <th>Morning</th>
                         <th>Evening</th>
                         <th>Night</th>
+                        <th>Overtime</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -161,6 +168,7 @@ function Page() {
                             <td>{client.morningShift}</td>
                             <td>{client.eveningShift}</td>
                             <td>{client.nightShift}</td>
+                            <td>{client.overtimePermission}</td>
                         
                             <td>
                                 {allClient.length > 0 && <button className="button danger" onClick={() => handleDeleteClient(client._id)}>Delete</button>}
@@ -200,6 +208,13 @@ function Page() {
                         
                         <input type="text" placeholder="Evening Shift" value={newClientData.eveningShift} onChange={(e) => setNewClientData({ ...newClientData, eveningShift: e.target.value })} />
                         <input type="text" placeholder="Night Shift" value={newClientData.nightShift} onChange={(e) => setNewClientData({ ...newClientData, nightShift: e.target.value })} />
+
+
+                        <select value={newClientData.overtimePermission} onChange={(e) => handleOvertimePermissionChange(e.target.value)}>
+                            <option value="">Select Overtime Permission</option>
+                            <option value="YES">YES</option>
+                            <option value="NO">NO</option>
+                        </select>
 
                         <button className="button primary" onClick={handleSaveClient}>Save</button>
                     </div>

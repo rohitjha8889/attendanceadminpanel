@@ -17,6 +17,7 @@
     padding: 4px;
     padding-left: 10px;
     text-align: left;
+    font-size: 14px;
   }
   
   .clientTable th {
@@ -27,18 +28,7 @@
     background-color: #f9f9f9;
   }
 
-  .clientTable-container .clientTable td:nth-child(4) {
-    width: 18%; /* Adjust the width as needed */
-  }
-  .clientTable-container .clientTable td:nth-child(3) {
-    width: 15%; /* Adjust the width as needed */
-  }
-  .clientTable-container .clientTable td:nth-child(2) {
-    width: 15%; /* Adjust the width as needed */
-  }
-  .clientTable-container .clientTable td:nth-child(5) {
-    width: 18%; /* Adjust the width as needed */
-  }
+  
   
   /* Button Styles */
   .button {

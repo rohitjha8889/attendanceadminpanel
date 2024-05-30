@@ -42,9 +42,12 @@ function Page() {
     const [selectedClient, setSelectedClient] = useState('')
     const [suggestions, setSuggestions] = useState([]);
 
+    const [overtimeAccess, setOvertimeAccess] = useState('')
+
     const attendanceOptions = [
         'P/2',
         'P',
+        'A',
         'P+P/2',
         'PP',
         'PP+P/2',
@@ -66,31 +69,33 @@ function Page() {
         setSuggestions(filtered);
     };
 
-
     const handleDownloadExcel = () => {
         const wb = XLSX.utils.book_new();
         const wsData = []; // Array to store table data
-    
+
         // Extract header row
         const headerRow = [];
         document.querySelectorAll('.table thead th').forEach(cell => {
             headerRow.push(cell.textContent.trim());
         });
         wsData.push(headerRow);
-    
+
         // Iterate over table rows
         const rows = document.querySelectorAll('.table tbody tr');
         rows.forEach(row => {
-            const rowData = []; // Array to store data for each row
-            const cells = row.querySelectorAll('td');
-            cells.forEach(cell => {
-                // Extract text content of each cell
-                rowData.push(cell.textContent.trim());
-            });
-            // Add row data to wsData array
-            wsData.push(rowData);
+            // Check if the row has a specific className to exclude it
+            if (!row.classList.contains('totalPresentPerDay')) {
+                const rowData = []; // Array to store data for each row
+                const cells = row.querySelectorAll('td');
+                cells.forEach(cell => {
+                    // Extract text content of each cell
+                    rowData.push(cell.textContent.trim());
+                });
+                // Add row data to wsData array
+                wsData.push(rowData);
+            }
         });
-    
+
         // Create worksheet from wsData array
         const ws = XLSX.utils.aoa_to_sheet(wsData);
         // Append worksheet to workbook
@@ -98,7 +103,6 @@ function Page() {
         // Trigger download of workbook as Excel file
         XLSX.writeFile(wb, "attendance_data.xlsx");
     };
-
 
     const handleSuggestionClick = (selectedEmployee) => {
         setEmployeeName(selectedEmployee.employeeName);
@@ -239,11 +243,25 @@ function Page() {
         fetchAttendanceData()
     }
 
-
     const handleClientChange = (e) => {
         const client = e.target.value;
         setSelectedClient(client);
+
+        // Find the selected client's overtime permission
+        const selectedClient = allClient.find(item => item.hospitalName === client && item.overtimePermission === 'YES');
+
+        // Set overtimeAccess based on selectedClient
+        const overtimeAccess = selectedClient ? 'YES' : 'NO';
+        setOvertimeAccess(overtimeAccess);
+
+        // Log "yes" if overtime permission is found
+        if (selectedClient) {
+            console.log("overtimePermission yes");
+        } else {
+            console.log("Overtime Permission No")
+        }
     };
+
 
     const [selectedMonth, setSelectedMonth] = useState(new Date());
     const handleMonthChange = (date) => {
@@ -272,6 +290,14 @@ function Page() {
             <th>EmployeeName</th>
             <th>Designation</th>
             {dayNumbers.map(day => <th key={day}>{day}</th>)}
+            <th>Present</th>
+            <th>OT</th>
+            <th>Absent</th>
+            {overtimeAccess === 'YES' && (
+                <th>OT(Hrs.)</th>
+            )}
+
+            <th>Total</th>
         </tr>
     );
 
@@ -310,7 +336,7 @@ function Page() {
         });
 
 
-
+        let totalOvertimeHours = 0;
 
         matchingAttendance.forEach(attendance => {
             // Extract year, month, and day from checkInTime
@@ -323,7 +349,12 @@ function Page() {
             const checkInDay = parseInt(checkInDate.split('.')[0], 10);
 
 
-
+            if (checkInYear === selectedYear && checkInMonth === selectedMonthNumber) {
+                // If the attendance has overtime recorded, add it to the total
+                if (attendance.overTime) {
+                    totalOvertimeHours += parseInt(attendance.overTime, 10); // Assuming overTime is in hours
+                }
+            }
 
 
             if (checkInYear === selectedYear && checkInMonth === selectedMonthNumber && dayNumbers.includes(checkInDay)) {
@@ -335,17 +366,105 @@ function Page() {
         });
 
         // Generate the row with attendance status for each day
+        let presentCount = 0;
+        let absentCount = 0;
+        let halfCount = 0;
+        let otCount = 0;
+        
+
+        attendanceStatusArray.forEach(status => {
+            if (status === 'P') {
+                presentCount += 1;
+            } else if (status === 'PP') {
+                presentCount += 1;
+                otCount += 1;
+            } else if (status === 'PPP') {
+                presentCount += 1;
+                otCount += 1;
+            } else if (status === 'A') {
+                absentCount += 1;
+            } else if (status === 'P/2') {
+                presentCount += 0.5;
+            } else if (status === 'P+P/2') {
+                presentCount += 1
+                otCount += 0.5
+            } else if (status === 'PP+P/2') {
+                presentCount += 1
+                otCount += 1.5
+            }
+        });
         return (
             <tr key={index}>
                 <td>{index + 1}</td>
                 <td>{data.employeeName}</td>
                 <td>{data.service}</td>
                 {attendanceStatusArray.map((status, dayIndex) => (
+
                     <td key={dayIndex}><button className='attendaceDetailBtn' onClick={() => handleAttendanceDetail(attendanceIdArray[dayIndex])}>{status}</button> </td>
+
+
                 ))}
+                <td>{presentCount}</td>
+                <td>{otCount}</td>
+                <td>{absentCount}</td>
+                {overtimeAccess === 'YES' && (
+                    <td>{totalOvertimeHours}</td>
+                )}
+
+                <td>{presentCount + otCount}</td>
             </tr>
         );
     });
+
+
+
+
+    const totalPresentPerDay = dayNumbers.map(day => {
+        let totalPresent = 0;
+        filterAllEmployee.forEach(data => {
+            const matchingAttendance = attendanceDetail.filter(attendance => attendance.employeeId === data._id);
+
+            matchingAttendance.forEach(attendance => {
+                const checkInDate = attendance.checkInTime;
+                const checkInYear = parseInt(checkInDate.split('.')[2], 10);
+                const checkInMonth = parseInt(checkInDate.split('.')[1], 10);
+                const checkInDay = parseInt(checkInDate.split('.')[0], 10);
+
+                if (checkInYear === selectedYear && checkInMonth === selectedMonthNumber && checkInDay === day) {
+                    if (attendance.attendanceStatus === 'P') {
+                        totalPresent += 1;
+                    } else if (attendance.attendanceStatus === 'PP') {
+                        totalPresent += 1;
+                    } else if (attendance.attendanceStatus === 'PPP') {
+                        totalPresent += 1;
+
+                    } else if (attendance.attendanceStatus === 'P/2') {
+                        totalPresent += 1;
+
+                    } else if (attendance.attendanceStatus === 'P+P/2') {
+                        totalPresent += 1;
+
+                    } else if (attendance.attendanceStatus === 'PP+P/2') {
+                        totalPresent += 1;
+                    }
+                }
+            });
+        });
+        return totalPresent;
+    });
+
+
+
+    const totalPresentRow = (
+        <tr>
+            <td>Total</td>
+            {totalPresentPerDay.map((total, index) => (
+                <td key={index}>{total}</td>
+            ))}
+            <td>{totalPresentPerDay.reduce((acc, curr) => acc + curr, 0)}</td>
+        </tr>
+    );
+
 
     return (
         <div style={{ minHeight: '100vh' }}>
@@ -368,8 +487,9 @@ function Page() {
                         ))}
                     </select>
                 </div>
-                <div>
+                <div style={{ width: '30%', display: 'flex', justifyContent: 'space-between' }}>
                     <button onClick={handleAddAttendance}>Add Attendance</button>
+                    <button onClick={handleDownloadExcel}>Download Excel</button>
                 </div>
             </div>
             <div className='tableContainer'>
@@ -382,7 +502,26 @@ function Page() {
                     </tbody>
                 </table>
             </div>
-            <button onClick={handleDownloadExcel}>Download Excel</button>
+
+
+
+            <div className='totalPresentPerDay'>
+                <h3>Total Present Per Day</h3>
+                <table className='tablePer'>
+                    <thead>
+                        <tr>
+                            <th className='totalHead'>Date</th>
+                            {dayNumbers.map(day => <th key={day}>{day}</th>)}
+                            <th>Total Staff</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {totalPresentRow}
+                    </tbody>
+                </table>
+            </div>
+
+
 
             {showAttendanceDetailPopup && (
                 <div className="popup-container">
@@ -413,10 +552,10 @@ function Page() {
                                         <span>Name</span>
                                         <span>{specificAttendenceDetail.madeByDetails.employeeName}</span>
                                     </div>
-                                ):(
+                                ) : (
                                     <p>Made By Admin</p>
                                 )
-                            }
+                                }
 
                                 {specificAttendenceDetail.madeByDetails && (
                                     <div>
@@ -517,12 +656,14 @@ function Page() {
                                         ))}
                                     </select>
 
-                                    <input
-                                        type="text"
-                                        placeholder='Overtime'
-                                        value={overTime}
-                                        onChange={(e) => setOverTime(e.target.value)}
-                                    />
+                                    {overtimeAccess === 'YES' && (
+                                        <input
+                                            type="text"
+                                            placeholder='Overtime'
+                                            value={overTime}
+                                            onChange={(e) => setOverTime(e.target.value)}
+                                        />
+                                    )}
                                 </div>
                             </div>
                             {/* Add other fields as required */}

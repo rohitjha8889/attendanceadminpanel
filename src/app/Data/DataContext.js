@@ -7,6 +7,7 @@ const DataProvider = ({ children }) => {
 
 
   const IP_Address = 'http://localhost:5001'
+  // const IP_Address = 'https://apifacility.metrolite.co.in'
   const [services, setServices] = useState([]);
 
   useEffect(() => {
